@@ -261,7 +261,7 @@ bool GaussianCombo<T>::put(xmlNodePtr cur)
   if(!Normalized)
     c *= NormL*pow(alpha,NormPow);
   LOGMSG("    Gaussian exponent = " << alpha
-         << "\n              contraction=" << c0 <<  " nomralized contraction = " << c)
+         << "\n              contraction=" << c0 <<  " normalized contraction = " << c)
   gset.push_back(BasicGaussian(alpha,c));
   return true;
 }
