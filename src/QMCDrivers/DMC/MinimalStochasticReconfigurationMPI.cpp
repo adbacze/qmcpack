@@ -11,7 +11,7 @@
     
 
 
-#include "QMCDrivers/DMC/MinimalStochasticReconfiguration.h"
+#include "QMCDrivers/DMC/MinimalStochasticReconfigurationMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/RandomGenerator.h"
@@ -21,17 +21,17 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-MinimalStochasticReconfiguration::MinimalStochasticReconfiguration(Communicate* c) :WalkerControlBase(c)
+MinimalStochasticReconfigurationMPI::MinimalStochasticReconfigurationMPI(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
 }
 
-int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
+int MinimalStochasticReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
 {
-  int nw(W.getActiveWalkers()); //get the number of active walkers and store it in nw
-  if(wConfScaled.size()!=nw)    //check to see if instance has set size of scaled weight vector appropriately 
+  int nw(W.getActiveWalkers()); // get the number of active walkers and store it in nw
+  if(wConfScaled.size()!=nw)    // check to see if instance has set size of scaled weight vector appropriately 
   {
-    wConfScaled.resize(nw);     //if not (because 1st call from instance) then resize appropriately
+    wConfScaled.resize(nw);     // if not (because 1st call from instance) then resize appropriately
   }
 
   //accumulate the energies
@@ -47,7 +47,7 @@ int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& 
     esum += wgt*e;
     e2sum += wgt*e*e;
     ecum += e;
-    wtot += wConfScaled[iw]=wgt; //note that we will be scaling each entry of wConfScaled later
+    wtot += wConfScaled[iw]=wgt; // note that we will be scaling each entry of wConfScaled later
     ++it;
   }
   curData[ENERGY_INDEX]=esum;
@@ -58,7 +58,7 @@ int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& 
   curData[R2ACCEPTED_INDEX]=r2_accepted;
   curData[R2PROPOSED_INDEX]=r2_proposed;
 
-  //divide the sum of weights by the number of walkers to get the global weight
+  // divide the sum of weights by the number of walkers to get the global weight
   wGlobal=wtot/static_cast<RealType>(nw);
   std::vector<int> plus,minus;
   RealType NreconfPlus=0.0, NreconfMinus=0.0;
@@ -75,8 +75,8 @@ int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& 
     }
   }
   
-  //app_log() << " size(plus), size(minus) " << plus.size() << " " << minus.size() << std::endl;
-  //app_log() << " nreconf " << NreconfPlus << " " << NreconfMinus << std::endl;  
+  // app_log() << " size(plus), size(minus) " << plus.size() << " " << minus.size() << std::endl;
+  // app_log() << " nreconf " << NreconfPlus << " " << NreconfMinus << std::endl;  
   
   int Nreconf = static_cast<int>(NreconfPlus + Random());
   //app_log() << " # of reconfigurations: " << Nreconf << std::endl;
@@ -120,12 +120,30 @@ int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& 
   return nw;
 }
 
-int MinimalStochasticReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+void MinimalStochasticReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
+    const std::vector<IndexType>& NAME)
 {
+
+
+}
+
+void MinimalStochasticReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
+    const std::vector<IndexType>& NAME)
+{
+
+
+}
+
+int MinimalStochasticReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+{
+  //apply minimal stochastic reconfiguration to walker population
   int nwkept = reconfigureWalkers(W);
+
   //update EnsembleProperty
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
+
+  //all weights and multiplicities are 1 in minimal stochastic reconfiguration
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end)
   {

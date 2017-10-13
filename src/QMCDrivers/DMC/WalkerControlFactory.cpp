@@ -8,6 +8,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//		      Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -18,10 +19,12 @@
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCDrivers/DMC/MinimalStochasticReconfiguration.h"
 #include "QMCDrivers/DMC/WalkerPureDMC.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#include "QMCDrivers/DMC/MinimalStochasticReconfigurationMPI.h"
 #endif
 
 namespace qmcplusplus
@@ -69,8 +72,8 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   {
     if(fixw)
     {
-      app_log() << "  Using WalkerReconfiguration for population control." << std::endl;
-      wc = new WalkerReconfiguration(comm);
+      app_log() << "  Using MinimalStochasticReconfiguration for population control." << std::endl;
+      wc = new MinimalStochasticReconfiguration(comm);
     }
     else
     {

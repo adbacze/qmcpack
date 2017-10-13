@@ -11,8 +11,8 @@
     
     
 
-#ifndef QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROL_H
-#define QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROL_H
+#ifndef QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROLMPI_H
+#define QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROLMPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
 
@@ -25,6 +25,14 @@ namespace qmcplusplus
  */
 struct MinimalStochasticReconfiguration: public WalkerControlBase
 {
+  ///total number of walkers
+  int TotalWalkers;
+  /// first index of the local walkers
+  int FirstWalkers;
+  /// last index of the local walkers
+  int LastWalkers;
+  
+
 
   // sum of individual weights divided by the total number of walkers
   RealType wGlobal;
@@ -46,8 +54,19 @@ struct MinimalStochasticReconfiguration: public WalkerControlBase
   {
     return 0.0;
   }
-
+  /** return the number of surviving walkers
+  */
   int reconfigureWalkers(MCWalkerConfiguration& W);
+
+  /** send excess walkers to another node
+   * @param plus local indices of the walkers to be sent
+   */
+  void sendWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& plus);
+
+  /** receive excess walkers from another node, overwrite dying walkers
+   * @param minus local indices of the walkers to be overwritten
+   */
+  void recvWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& minus);
 };
 }
 #endif
