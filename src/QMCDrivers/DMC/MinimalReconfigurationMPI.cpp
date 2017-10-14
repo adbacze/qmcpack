@@ -29,9 +29,9 @@ MinimalReconfigurationMPI::MinimalReconfigurationMPI(Communicate* c) :WalkerCont
 int MinimalReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers()); // get the number of active walkers and store it in nw
-  if(wConfScaled.size()!=nw)    // check to see if instance has set size of scaled weight vector appropriately 
+  if(wConfTilde.size()!=nw)    // check to see if instance has set size of scaled weight vector appropriately 
   {
-    wConfScaled.resize(nw);     // if not (because 1st call from instance) then resize appropriately
+    wConfTilde.resize(nw);     // if not (because 1st call from instance) then resize appropriately
   }
 
   //accumulate the energies
@@ -47,7 +47,7 @@ int MinimalReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
     esum += wgt*e;
     e2sum += wgt*e*e;
     ecum += e;
-    wtot += wConfScaled[iw]=wgt; // note that we will be scaling each entry of wConfScaled later
+    wtot += wConfTilde[iw]=wgt; // note that we will be scaling each entry of wConfTilde later
     ++it;
   }
   curData[ENERGY_INDEX]=esum;
@@ -64,14 +64,14 @@ int MinimalReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
   RealType NreconfPlus=0.0, NreconfMinus=0.0;
   for(int iw=0; iw<nw; iw++)
   {
-    wConfScaled[iw]=wConfScaled[iw]/wGlobal;
-    if(wConfScaled[iw]>1.0){
+    wConfTilde[iw]=wConfTilde[iw]/wGlobal;
+    if(wConfTilde[iw]>1.0){
        plus.push_back(iw);
-       NreconfPlus += std::abs(wConfScaled[iw]-1.0);
+       NreconfPlus += std::abs(wConfTilde[iw]-1.0);
     }
     else{
        minus.push_back(iw);	   
-       NreconfMinus += std::abs(wConfScaled[iw]-1.0); 
+       NreconfMinus += std::abs(wConfTilde[iw]-1.0); 
     }
   }
   
