@@ -28,7 +28,7 @@ using namespace qmcplusplus;
 CombReconfiguration::CombReconfiguration(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
-  UnitZeta=Random();
+  //UnitZeta=Random(); //uncomment when you want to compare to busted version of code
   //ofstream fout("check.dat");
 }
 
@@ -66,7 +66,9 @@ int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   curData[R2ACCEPTED_INDEX]=r2_accepted;
   curData[R2PROPOSED_INDEX]=r2_proposed;
   RealType nwInv=1.0/static_cast<RealType>(nw);
+  UnitZeta=Random(); //note: it is REALLY important to reset the random offset each generation
   RealType dstep=UnitZeta*nwInv;
+  //app_log() << " dstep : " << dstep << std::endl;
   for(int iw=0; iw<nw; iw++)
   {
     Zeta[iw]=wtot*(dstep+static_cast<RealType>(iw)*nwInv);

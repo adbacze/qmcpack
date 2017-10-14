@@ -29,9 +29,10 @@ CombReconfigurationMPI::CombReconfigurationMPI(Communicate* c):
   WalkerControlBase(c), TotalWalkers(0)
 {
   SwapMode=1;
-  UnitZeta=Random();
-  myComm->bcast(UnitZeta);
-  app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << std::endl;
+  //uncomment if you want to compare to old busted version of comb
+  //UnitZeta=Random(); 
+  //myComm->bcast(UnitZeta);
+  //app_log() << "  First weight [0,1) for reconfiguration =" << UnitZeta << std::endl;
 }
 
 int
@@ -69,7 +70,7 @@ int CombReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
     LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
     nwInv = 1.0/static_cast<RealType>(TotalWalkers);
-    DeltaStep = UnitZeta*nwInv;
+    //DeltaStep = UnitZeta*nwInv; //uncomment if you want to compare against old busted version of comb
     ncopy_w.resize(nw);
     wConf.resize(nw);
     //wSum.resize(NumContexts);
@@ -106,6 +107,10 @@ int CombReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   curData[LE_MAX+MyContext]=wtot;
   //collect everything
   myComm->allreduce(curData);
+  //generate/share random offset for teeth
+  UnitZeta=Random(); 
+  myComm->bcast(UnitZeta);
+  DeltaStep = UnitZeta*nwInv;
   //update EnsembleProperty
   W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
   W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
