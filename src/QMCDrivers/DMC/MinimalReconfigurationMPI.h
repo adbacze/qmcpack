@@ -19,9 +19,9 @@
 namespace qmcplusplus
 {
 
-/** Class to implement minimal stochastic reconfiguration as described in Assaraf, Caffarel, and Khelif PRE (2000)
+/** Class to implement minimal stochastic reconfiguration in Assaraf, Caffarel, and Khelif PRE (2000) - henceforth ACK 2000
  *
- * Serial implementation doesn't have to worry about swapping walkers between nodes
+ * MPI implementation -might- have to swap walkers between nodes
  */
 struct MinimalReconfigurationMPI: public WalkerControlBase
 {
@@ -31,14 +31,14 @@ struct MinimalReconfigurationMPI: public WalkerControlBase
   int FirstWalkers;
   /// last index of the local walkers
   int LastWalkers;
-  
+  /// the number of walkers available for reconfiguration
+  std::vector<IndexType> dN;
 
-
-  // sum of individual weights divided by the total number of walkers
+  // sum of individual weights divided by the total number of walkers (Eqn. 49 in ACK 2000)
   RealType wGlobal;
-
-  // weight per walker scaled by population average weight 
-  std::vector<RealType> wConfScaled;
+  
+  // weight per walker scaled by population average weight (Eqn. 50 in ACK 2000)
+  std::vector<RealType> wConfTilde;
 
   /** default constructor
    *

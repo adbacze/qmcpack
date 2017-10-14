@@ -58,7 +58,7 @@ struct CombReconfiguration: public WalkerControlBase
 
   /** return the surviving Walkers
    */
-  int getIndexPermutation(MCWalkerConfiguration& W);
+  int reconfigureWalkers(MCWalkerConfiguration& W);
   int shuffleIndex(int nw);
 };
 }

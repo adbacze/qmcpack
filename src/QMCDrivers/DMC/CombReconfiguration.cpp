@@ -32,7 +32,7 @@ CombReconfiguration::CombReconfiguration(Communicate* c) :WalkerControlBase(c)
   //ofstream fout("check.dat");
 }
 
-int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
+int CombReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers());
   if(Zeta.size()!=nw)
@@ -127,63 +127,18 @@ int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     W[im]->ParentID=W[ip]->ID;
     W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
   }
-  //int killed = shuffleIndex(nw);
-  //fout << "# Total weight " << wtot << " " << killed <<  std::endl;
-  //cout << "<<<< CopyIndex " << std::endl;
-  //std::copy(IndexCopy.begin(), IndexCopy.end(), std::ostream_iterator<int>(std::cout, " "));
-  //cout << std::endl << "<<<<<<" << std::endl;
-  //for(int iw=0; iw<nw; iw++) {
-  //  if(IndexCopy[iw] != iw) {
-  //    W[iw]->assign(*(W[IndexCopy[iw]]));
-  //  }
-  //}
-  return icdiff;
-}
 
-int CombReconfiguration::shuffleIndex(int nw)
-{
-  std::vector<int> ipip(nw,0);
-  for(int iw=0; iw<nw; iw++)
-    ipip[IndexCopy[iw]]+=1;
-  std::vector<int> indz;
-  for(int iw=0; iw<nw; iw++)
-  {
-    if(ipip[iw]==0)
-    {
-      indz.push_back(iw);
-    }
-  }
-  int ikilled=0;
-  for(int iw=0; iw<nw; iw++)
-  {
-    if(ipip[iw] != 0)
-    {
-      IndexCopy[iw]=iw;
-      for(int i=1; i<ipip[iw]; i++)
-      {
-        IndexCopy[indz[ikilled++]]=iw;
-      }
-    }
-  }
-  return indz.size();
+  return icdiff;
 }
 
 int
 CombReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
-  int nwkept = getIndexPermutation(W);
+  int nwkept = reconfigureWalkers(W);
   app_log() << "   # walkers, # copied, # overwritten: " << dN[0] << " " << dN[1] << " " << dN[2] << std::endl;
   //update EnsembleProperty
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
-  //W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
-  //W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-  //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
-  //accumData[ENERGY_INDEX]     += curData[ENERGY_INDEX]*wgtInv;
-  //accumData[ENERGY_SQ_INDEX]  += curData[ENERGY_SQ_INDEX]*wgtInv;
-  //accumData[WALKERSIZE_INDEX] += nwkept;
-  ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
-  //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   //set Weight and Multiplicity to default values
   MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
   while(it != it_end)

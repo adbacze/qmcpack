@@ -64,7 +64,7 @@ struct CombReconfigurationMPI: public WalkerControlBase
 
   /** return the surviving Walkers
    */
-  int swapWalkers(MCWalkerConfiguration& W);
+  int reconfigureWalkers(MCWalkerConfiguration& W);
 
 
   /** send the extra walkers to other node

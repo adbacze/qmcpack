@@ -38,7 +38,7 @@ CombReconfigurationMPI::CombReconfigurationMPI(Communicate* c):
 int
 CombReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
-  int nwkept = swapWalkers(W);
+  int nwkept = reconfigureWalkers(W);
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
   //RealType wgtInv(1.0/curData[WEIGHT_INDEX]);
@@ -58,7 +58,7 @@ CombReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trig
   return nwkept;
 }
 
-int CombReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
+int CombReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
