@@ -38,6 +38,9 @@ struct CombReconfiguration: public WalkerControlBase
   std::vector<RealType> wConf;
   //comb
   std::vector<RealType> Zeta;
+  //index 1 = total # of walkers, index 2 = size of plus, index 3 = size of minus
+  std::vector<IndexType> dN;
+
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done

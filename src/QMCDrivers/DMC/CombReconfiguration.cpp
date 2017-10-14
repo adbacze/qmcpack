@@ -40,6 +40,7 @@ int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
     Zeta.resize(nw+1);
     IndexCopy.resize(nw);
     wConf.resize(nw);
+    dN.resize(3);
   }
   //accumulate the energies
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
@@ -111,6 +112,10 @@ int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
       if(m==0)
         minus.push_back(iw);
   }
+  dN[0] = icdiff;
+  dN[1] = plus.size();
+  dN[2] = minus.size();
+
   curData[FNSIZE_INDEX]=nw-minus.size();
   curData[RNONESIZE_INDEX]=minus.size();
   for(int i=0; i<plus.size(); i++)
@@ -165,6 +170,7 @@ int
 CombReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   int nwkept = getIndexPermutation(W);
+  app_log() << "   # walkers, # copied, # overwritten: " << dN[0] << " " << dN[1] << " " << dN[2] << std::endl;
   //update EnsembleProperty
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;

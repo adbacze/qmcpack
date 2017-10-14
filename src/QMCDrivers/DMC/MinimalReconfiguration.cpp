@@ -29,12 +29,11 @@ MinimalReconfiguration::MinimalReconfiguration(Communicate* c) :WalkerControlBas
 int MinimalReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers()); //get the number of active walkers and store it in nw
-  if(wConfScaled.size()!=nw)    //check to see if instance has set size of scaled weight vector appropriately 
+  if(wConfTilde.size()!=nw)    //check to see if instance has set size of scaled weight vector appropriately 
   {
-    wConfScaled.resize(nw);     //if not (because 1st call from instance) then resize appropriately
+    wConfTilde.resize(nw);     //if not (because 1st call from instance) then resize appropriately
   }
-
-  //accumulate the energies
+  //process walker contents 
   RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
   MCWalkerConfiguration::iterator it(W.begin());
   RealType r2_accepted=0.0,r2_proposed=0.0;
@@ -47,7 +46,7 @@ int MinimalReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
     esum += wgt*e;
     e2sum += wgt*e*e;
     ecum += e;
-    wtot += wConfScaled[iw]=wgt; //note that we will be scaling each entry of wConfScaled later
+    wtot += wConfTilde[iw]=wgt; //note that we will be scaling each entry of wConfTilde  later
     ++it;
   }
   curData[ENERGY_INDEX]=esum;
@@ -58,71 +57,56 @@ int MinimalReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
   curData[R2ACCEPTED_INDEX]=r2_accepted;
   curData[R2PROPOSED_INDEX]=r2_proposed;
 
-  //divide the sum of weights by the number of walkers to get the global weight
+  //divide the sum of weights by the number of walkers to get the global weight in Eqn. 49 of ACK 2000
   wGlobal=wtot/static_cast<RealType>(nw);
   std::vector<int> plus,minus;
   RealType NreconfPlus=0.0, NreconfMinus=0.0;
   for(int iw=0; iw<nw; iw++)
   {
-    wConfScaled[iw]=wConfScaled[iw]/wGlobal;
-    if(wConfScaled[iw]>1.0){
+    wConfTilde[iw]=wConfTilde[iw]/wGlobal;
+    if(wConfTilde[iw]>1.0){
        plus.push_back(iw);
-       NreconfPlus += std::abs(wConfScaled[iw]-1.0);
+       NreconfPlus += std::abs(wConfTilde[iw]-1.0);
     }
     else{
        minus.push_back(iw);	   
-       NreconfMinus += std::abs(wConfScaled[iw]-1.0); 
+       NreconfMinus += std::abs(wConfTilde[iw]-1.0); 
     }
   }
-  
-  //app_log() << " size(plus), size(minus) " << plus.size() << " " << minus.size() << std::endl;
-  //app_log() << " nreconf " << NreconfPlus << " " << NreconfMinus << std::endl;  
-  
-  int Nreconf = static_cast<int>(NreconfPlus + Random());
-  //app_log() << " # of reconfigurations: " << Nreconf << std::endl;
+ 
+  app_log() << "   NreconfPlus: " << NreconfPlus << std::endl;
+  Nreconf = static_cast<int>(std::round(NreconfPlus + Random()));
 
-  std::vector<int> copyList(Nreconf,0);
-  std::vector<int> killList(Nreconf,0);
-  for(int r; r<Nreconf; r++){
-     
-     copyList[r] = plus[static_cast<int>(Random()*plus.size())-1];
-     killList[r] = minus[static_cast<int>(Random()*minus.size())-1];
-     
-     app_log() << " copy, kill " << copyList[r] << " " << killList[r] << std::endl;
+  curData[FNSIZE_INDEX]=nw-Nreconf;
+  curData[RNONESIZE_INDEX]=Nreconf;
 
-     W[killList[r]]->makeCopy(*(W[copyList[r]]));
-     W[killList[r]]->ParentID=W[copyList[r]]->ID;
-     W[killList[r]]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
+  int copyIndex, killIndex, copyWalker, killWalker;
+  if(Nreconf){
+     for(int r=0; r<Nreconf; r++){
+	
+	// check to see if there is a preferred way to generate random indices
+	copyIndex = static_cast<int>(Random()*plus.size());
+	killIndex = static_cast<int>(Random()*minus.size());
+	copyWalker = plus[copyIndex];
+	killWalker = minus[killIndex];
+
+        W[killWalker]->makeCopy(*(W[copyWalker]));
+        W[killWalker]->ParentID=W[copyWalker]->ID;
+        W[killWalker]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
+
+	// remove walkers that were copied/overwritten so we don't try twice
+	plus.erase(plus.begin()+copyIndex);
+	minus.erase(minus.begin()+killIndex);
+     }
   }
 
-/* 
-  curData[FNSIZE_INDEX]=nw-minus.size();
-  curData[RNONESIZE_INDEX]=minus.size();
-  for(int i=0; i<plus.size(); i++)
-  {	  
-    int im=minus[i],ip=plus[i];
-    W[im]->makeCopy(*(W[ip]));
-    W[im]->ParentID=W[ip]->ID;
-    W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
-  }
-  //int killed = shuffleIndex(nw);
-  //fout << "# Total weight " << wtot << " " << killed <<  std::endl;
-  //cout << "<<<< CopyIndex " << std::endl;
-  //std::copy(IndexCopy.begin(), IndexCopy.end(), std::ostream_iterator<int>(std::cout, " "));
-  //cout << std::endl << "<<<<<<" << std::endl;
-  //for(int iw=0; iw<nw; iw++) {
-  //  if(IndexCopy[iw] != iw) {
-  //    W[iw]->assign(*(W[IndexCopy[iw]]));
-  //  }
-  //}
-  return icdiff;
-*/
   return nw;
 }
 
 int MinimalReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   int nwkept = reconfigureWalkers(W);
+  app_log() << "   # of reconfigurations in current generation: " << Nreconf << std::endl;
   //update EnsembleProperty
   measureProperties(iter);
   W.EnsembleProperty=EnsembleProperty;
