@@ -11,7 +11,7 @@
     
 
 
-#include "QMCDrivers/DMC/MinimalStochasticReconfigurationMPI.h"
+#include "QMCDrivers/DMC/MinimalReconfigurationMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/RandomGenerator.h"
@@ -21,12 +21,12 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-MinimalStochasticReconfigurationMPI::MinimalStochasticReconfigurationMPI(Communicate* c) :WalkerControlBase(c)
+MinimalReconfigurationMPI::MinimalReconfigurationMPI(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
 }
 
-int MinimalStochasticReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
+int MinimalReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers()); // get the number of active walkers and store it in nw
   if(wConfScaled.size()!=nw)    // check to see if instance has set size of scaled weight vector appropriately 
@@ -120,21 +120,21 @@ int MinimalStochasticReconfigurationMPI::reconfigureWalkers(MCWalkerConfiguratio
   return nw;
 }
 
-void MinimalStochasticReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
+void MinimalReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
     const std::vector<IndexType>& NAME)
 {
 
 
 }
 
-void MinimalStochasticReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
+void MinimalReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
     const std::vector<IndexType>& NAME)
 {
 
 
 }
 
-int MinimalStochasticReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+int MinimalReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   //apply minimal stochastic reconfiguration to walker population
   int nwkept = reconfigureWalkers(W);

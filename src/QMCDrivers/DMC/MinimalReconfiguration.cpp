@@ -11,7 +11,7 @@
     
 
 
-#include "QMCDrivers/DMC/MinimalStochasticReconfiguration.h"
+#include "QMCDrivers/DMC/MinimalReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/RandomGenerator.h"
@@ -21,12 +21,12 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-MinimalStochasticReconfiguration::MinimalStochasticReconfiguration(Communicate* c) :WalkerControlBase(c)
+MinimalReconfiguration::MinimalReconfiguration(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
 }
 
-int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
+int MinimalReconfiguration::reconfigureWalkers(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers()); //get the number of active walkers and store it in nw
   if(wConfScaled.size()!=nw)    //check to see if instance has set size of scaled weight vector appropriately 
@@ -120,7 +120,7 @@ int MinimalStochasticReconfiguration::reconfigureWalkers(MCWalkerConfiguration& 
   return nw;
 }
 
-int MinimalStochasticReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+int MinimalReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   int nwkept = reconfigureWalkers(W);
   //update EnsembleProperty

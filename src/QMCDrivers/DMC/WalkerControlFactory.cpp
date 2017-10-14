@@ -8,7 +8,7 @@
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Ye Luo, yeluo@anl.gov, Argonne National Laboratory
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
-//		      Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -18,13 +18,13 @@
 
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
-#include "QMCDrivers/DMC/WalkerReconfiguration.h"
-#include "QMCDrivers/DMC/MinimalStochasticReconfiguration.h"
+#include "QMCDrivers/DMC/CombReconfiguration.h"
+#include "QMCDrivers/DMC/MinimalReconfiguration.h"
 #include "QMCDrivers/DMC/WalkerPureDMC.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
-#include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
-#include "QMCDrivers/DMC/MinimalStochasticReconfigurationMPI.h"
+#include "QMCDrivers/DMC/CombReconfigurationMPI.h"
+#include "QMCDrivers/DMC/MinimalReconfigurationMPI.h"
 #endif
 
 namespace qmcplusplus
@@ -47,7 +47,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc=0;
   int ncontexts = comm->size();
-  bool fixw= (reconfig || reconfigopt == "yes"|| reconfigopt == "pure");
+  bool fixw= (reconfig || reconfigopt == "comb" || reconfigopt == "min" || reconfigopt == "pure" );
   if(fixw)
   {
     int nwloc=std::max(omp_get_max_threads(),nwtot/ncontexts);
@@ -56,11 +56,20 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
 #if defined(HAVE_MPI)
   if(ncontexts>1)
   {
-    if(fixw)
+    if(reconfigopt=="comb")
     {
-      app_log() << "  Using WalkerReconfigurationMPI for population control." << std::endl;
-      wc = new WalkerReconfigurationMPI(comm);
+      app_log() << "  Using CombReconfigurationMPI for population control." << std::endl;
+      wc = new CombReconfigurationMPI(comm);
     }
+    else if(reconfigopt=="min")
+    {
+      app_log() << "  Using MinimalReconfigurationMPI for population control." << std::endl;	    
+      wc = new MinimalReconfigurationMPI(comm);
+    }
+    else if(reconfigopt=="pure")
+    {
+      app_log() << "  Using PureDMCMPI for population control." << std::endl;
+    }   	   
     else
     {
       app_log() << "  Using WalkerControlMPI for dynamic population control." << std::endl;
@@ -70,11 +79,20 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   else
 #endif
   {
-    if(fixw)
+    if(reconfigopt=="comb")
     {
-      app_log() << "  Using MinimalStochasticReconfiguration for population control." << std::endl;
-      wc = new MinimalStochasticReconfiguration(comm);
+      app_log() << "  Using CombReconfiguration for population control." << std::endl;
+      wc = new CombReconfiguration(comm);
     }
+    else if(reconfigopt=="min")
+    {
+      app_log() << "  Using MinimalReconfiguration for population control." << std::endl;
+      wc = new MinimalReconfiguration(comm);
+    }
+    else if(reconfigopt=="pure")
+    {
+      app_log() << "  Using PureDMC for population control." << std::endl;	    
+    }   
     else
     {
       app_log() << "  Using WalkerControlBase for dynamic population control." << std::endl;

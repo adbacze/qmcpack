@@ -10,6 +10,7 @@
 #//                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 #//                    Raymond Clay III, j.k.rofling@gmail.com, Lawrence Livermore National Laboratory
 #//                    Mark Dewing, markdewing@gmail.com, University of Illinois at Urbana-Champaign
+#//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 #//
 #// File created by: Bryan Clark, bclark@Princeton.edu, Princeton University
 #//////////////////////////////////////////////////////////////////////////////////////
@@ -43,8 +44,8 @@ SET(QMCDRIVERS
   DMC/DMCUpdatePbyPFast.cpp
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
-  DMC/WalkerReconfiguration.cpp
-  DMC/MinimalStochasticReconfiguration.cpp
+  DMC/CombReconfiguration.cpp
+  DMC/MinimalReconfiguration.cpp
   RMC/RMCSingleOMP.cpp
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
@@ -89,7 +90,8 @@ ENDIF(QMC_CUDA)
 IF(HAVE_MPI) 
   SET(QMCDRIVERS ${QMCDRIVERS} 
   DMC/WalkerControlMPI.cpp
-  DMC/WalkerReconfigurationMPI.cpp)
+  DMC/CombReconfigurationMPI.cpp
+  DMC/MinimalReconfigurationMPI.cpp)
 ENDIF(HAVE_MPI) 
 
 # if using the LMYEngine interface, make sure we add the necessary functions

@@ -7,6 +7,7 @@
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,7 +15,7 @@
     
 
 
-#include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
+#include "QMCDrivers/DMC/CombReconfigurationMPI.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/RandomGenerator.h"
@@ -24,7 +25,7 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
+CombReconfigurationMPI::CombReconfigurationMPI(Communicate* c):
   WalkerControlBase(c), TotalWalkers(0)
 {
   SwapMode=1;
@@ -34,7 +35,7 @@ WalkerReconfigurationMPI::WalkerReconfigurationMPI(Communicate* c):
 }
 
 int
-WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+CombReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   int nwkept = swapWalkers(W);
   measureProperties(iter);
@@ -56,7 +57,7 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
   return nwkept;
 }
 
-int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
+int CombReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
 {
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
@@ -214,7 +215,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   return dN[NumContexts];
 }
 
-void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
+void CombReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
     const std::vector<IndexType>& plus)
 {
   std::vector<int> minusN, plusN;
@@ -249,7 +250,7 @@ void WalkerReconfigurationMPI::sendWalkers(MCWalkerConfiguration& W,
   }
 }
 
-void WalkerReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
+void CombReconfigurationMPI::recvWalkers(MCWalkerConfiguration& W,
     const std::vector<IndexType>& minus)
 {
   std::vector<IndexType> minusN, plusN;

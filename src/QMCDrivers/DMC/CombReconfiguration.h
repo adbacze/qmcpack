@@ -7,6 +7,7 @@
 // File developed by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,8 +15,8 @@
     
 
 
-#ifndef QMCPLUSPLUS_RECONFIGURATION_WALKER_CONTROLMPI_H
-#define QMCPLUSPLUS_RECONFIGURATION_WALKER_CONTROLMPI_H
+#ifndef QMCPLUSPLUS_COMB_RECONFIGURATION_WALKER_CONTROL_H
+#define QMCPLUSPLUS_COMB_RECONFIGURATION_WALKER_CONTROL_H
 
 #include "QMCDrivers/WalkerControlBase.h"
 
@@ -26,56 +27,36 @@ namespace qmcplusplus
  *
  * Base class to handle serial mode with branching only
  */
-struct WalkerReconfigurationMPI: public WalkerControlBase
+struct CombReconfiguration: public WalkerControlBase
 {
 
-  ///total number of walkers
-  int TotalWalkers;
-  ///starting index of the local walkers
-  int FirstWalker;
-  ///ending index of the local walkers
-  int LastWalker;
-  ///random number [0,1)
+  //random number [0,1)
   RealType UnitZeta;
-  ///random number [0,1)/number of walkers
-  RealType DeltaStep;
-  ///1/(total number of walkers)
-  RealType nwInv;
-  ///the number of extra/missing walkers
-  std::vector<IndexType> dN;
+
+  std::vector<int>      IndexCopy;
   //weight per walker
   std::vector<RealType> wConf;
-  //accumulated weight [0,ip) for each ip
-  std::vector<RealType> wOffset;
-  //local sum of the weights for each ip
-  std::vector<RealType> wSum;
   //comb
-  //vector<RealType> Zeta;
-
+  std::vector<RealType> Zeta;
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerReconfigurationMPI(Communicate* c=0);
+  CombReconfiguration(Communicate* c);
 
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
 
+  /** return 0.0 to disable feedback method */
+  RealType getFeedBackParameter(int ngen, RealType tau)
+  {
+    return 0.0;
+  }
+
   /** return the surviving Walkers
    */
-  int swapWalkers(MCWalkerConfiguration& W);
-
-
-  /** send the extra walkers to other node
-   * @param plus local indices of the walkers to be sent
-   */
-  void sendWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& plus);
-
-  /** send the missing walkers from other node
-   * @param minus local indices of the walkers to be copied
-   */
-  void recvWalkers(MCWalkerConfiguration& W, const std::vector<IndexType>& minus);
-
+  int getIndexPermutation(MCWalkerConfiguration& W);
+  int shuffleIndex(int nw);
 };
 }
 #endif

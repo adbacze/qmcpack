@@ -7,6 +7,7 @@
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //                    Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //                    Mark A. Berrill, berrillma@ornl.gov, Oak Ridge National Laboratory
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeongnim Kim, jeongnim.kim@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -14,7 +15,7 @@
     
 
 
-#include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCDrivers/DMC/CombReconfiguration.h"
 #include "Utilities/IteratorUtility.h"
 #include "Utilities/UtilityFunctions.h"
 #include "Utilities/RandomGenerator.h"
@@ -24,14 +25,14 @@ using namespace qmcplusplus;
  *
  * set SwapMode
  */
-WalkerReconfiguration::WalkerReconfiguration(Communicate* c) :WalkerControlBase(c)
+CombReconfiguration::CombReconfiguration(Communicate* c) :WalkerControlBase(c)
 {
   SwapMode=1;
   UnitZeta=Random();
   //ofstream fout("check.dat");
 }
 
-int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
+int CombReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
 {
   int nw(W.getActiveWalkers());
   if(Zeta.size()!=nw)
@@ -132,7 +133,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   return icdiff;
 }
 
-int WalkerReconfiguration::shuffleIndex(int nw)
+int CombReconfiguration::shuffleIndex(int nw)
 {
   std::vector<int> ipip(nw,0);
   for(int iw=0; iw<nw; iw++)
@@ -161,7 +162,7 @@ int WalkerReconfiguration::shuffleIndex(int nw)
 }
 
 int
-WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
+CombReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigger)
 {
   int nwkept = getIndexPermutation(W);
   //update EnsembleProperty

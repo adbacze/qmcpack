@@ -11,8 +11,8 @@
     
     
 
-#ifndef QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROLMPI_H
-#define QMCPLUSPLUS_MINSTOCHRECONF_WALKER_CONTROLMPI_H
+#ifndef QMCPLUSPLUS_MIN_RECONFIGURATION_WALKER_CONTROLMPI_H
+#define QMCPLUSPLUS_MIN_RECONFIGURATION_WALKER_CONTROLMPI_H
 
 #include "QMCDrivers/WalkerControlBase.h"
 
@@ -23,7 +23,7 @@ namespace qmcplusplus
  *
  * Serial implementation doesn't have to worry about swapping walkers between nodes
  */
-struct MinimalStochasticReconfiguration: public WalkerControlBase
+struct MinimalReconfigurationMPI: public WalkerControlBase
 {
   ///total number of walkers
   int TotalWalkers;
@@ -44,7 +44,7 @@ struct MinimalStochasticReconfiguration: public WalkerControlBase
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  MinimalStochasticReconfiguration(Communicate* c);
+  MinimalReconfigurationMPI(Communicate* c);
 
   /** perform branch, copy positive walkers into the space occupied by negative walkers */
   int branch(int iter, MCWalkerConfiguration& W, RealType trigger);
