@@ -20,7 +20,7 @@
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/CombReconfiguration.h"
 #include "QMCDrivers/DMC/MinimalReconfiguration.h"
-#include "QMCDrivers/DMC/WalkerPureDMC.h"
+#include "QMCDrivers/DMC/PureDMC.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/CombReconfigurationMPI.h"
@@ -68,7 +68,8 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     }
     else if(reconfigopt=="pure")
     {
-      app_log() << "  Using PureDMCMPI for population control." << std::endl;
+      app_log() << "  Using PureDMC for population control." << std::endl;
+      wc = new PureDMC(comm);
     }   	   
     else
     {
@@ -92,6 +93,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
     else if(reconfigopt=="pure")
     {
       app_log() << "  Using PureDMC for population control." << std::endl;	    
+      wc = new PureDMC(comm);
     }   
     else
     {

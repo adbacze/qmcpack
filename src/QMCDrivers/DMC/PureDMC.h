@@ -5,6 +5,7 @@
 // Copyright (c) 2016 Jeongnim Kim and QMCPACK developers.
 //
 // File developed by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
+//                    Andrew D. Baczewski, adbacze@sandia.gov, Sandia National Laboratories
 //
 // File created by: Jeremy McMinnis, jmcminis@gmail.com, University of Illinois at Urbana-Champaign
 //////////////////////////////////////////////////////////////////////////////////////
@@ -24,14 +25,14 @@ namespace qmcplusplus
  *
  * Base class to handle serial mode with branching only
  */
-struct WalkerPureDMC: public WalkerControlBase
+struct PureDMC: public WalkerControlBase
 {
 
   /** default constructor
    *
    * Set the SwapMode to zero so that instantiation can be done
    */
-  WalkerPureDMC(Communicate* c):WalkerControlBase(c) {};
+  PureDMC(Communicate* c):WalkerControlBase(c) {};
 
   /** perform branch and swap walkers as required */
   int branch(int iter, MCWalkerConfiguration& W, RealType trigger)
