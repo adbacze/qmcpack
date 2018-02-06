@@ -33,44 +33,44 @@ WalkerReconfiguration::WalkerReconfiguration(Communicate* c) :WalkerControlBase(
 
 int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
 {
-  int nw(W.getActiveWalkers());
-  if(Zeta.size()!=nw)
+  int nw(W.getActiveWalkers()); // get the number of walkers in the current population 
+  if(Zeta.size()!=nw) // make sure there are 'teeth' allocated for the current population
   {
-    Zeta.resize(nw+1);
+    Zeta.resize(nw+1); // resize arrays if necessary
     IndexCopy.resize(nw);
     wConf.resize(nw);
   }
-  //accumulate the energies
-  RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
+  
+  // sum up the total weight of the current population
   MCWalkerConfiguration::iterator it(W.begin());
-  RealType r2_accepted=0.0,r2_proposed=0.0;
+  RealType wtot=0.0;
   for(int iw=0; iw<nw; iw++)
   {
-    r2_accepted+=(*it)->Properties(R2ACCEPTED);
-    r2_proposed+=(*it)->Properties(R2PROPOSED);
-    RealType wgt((*it)->Weight);
-    RealType e((*it)->Properties(LOCALENERGY));
-    esum += wgt*e;
-    e2sum += wgt*e*e;
-    ecum += e;
+    RealType wgt((*it)->Weight);  
     wtot += wConf[iw]=wgt;
     ++it;
   }
-  curData[ENERGY_INDEX]=esum;
-  curData[ENERGY_SQ_INDEX]=e2sum;
+  
+  // we may as well store the total weight and number of walkers,
+  // these won't change on re-weighting)
   curData[WALKERSIZE_INDEX]=nw;
   curData[WEIGHT_INDEX]=wtot;
-  curData[EREF_INDEX]=ecum;
-  curData[R2ACCEPTED_INDEX]=r2_accepted;
-  curData[R2PROPOSED_INDEX]=r2_proposed;
+  
+  // in combed population, each walker has the same weight - wtot/nw 
+  // first precompute 1/nw 
   RealType nwInv=1.0/static_cast<RealType>(nw);
+  
+  // generate the random offset at which the 'teeth' of the comb will start
   UnitZeta=Random();
   RealType dstep=UnitZeta*nwInv;
+
+  // store the 'teeth' of the comb in Zeta - one 'tooth' per walker 
   for(int iw=0; iw<nw; iw++)
   {
     Zeta[iw]=wtot*(dstep+static_cast<RealType>(iw)*nwInv);
   }
-  Zeta[nw]=wtot+1.0;
+  Zeta[nw]=wtot+1.0; // the extra space accomodates the random offset, of course
+
   //for(int iw=0; iw<nw; iw++) {
   //  fout << iw << " " << Zeta[iw+1]-Zeta[iw] << " " << wConf[iw] << std::endl;
   //}
@@ -80,11 +80,15 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   RealType wCur=0.0;
   //surviving walkers
   int icdiff=0;
-  it=W.begin();
+  //it=W.begin();
   std::vector<int> ipip(nw,0);
+
+  // loop over walkers
   for(int iw=0; iw<nw; iw++)
   {
+    // get the accumulated weight of the population up through the current walker	  
     RealType tryp=wCur+std::abs(wConf[iw]);
+    // count the number of 'teeth' that land in the current walker - this is the number of copies 
     int ni=0;
     while(Zeta[ind]<tryp && Zeta[ind] >= wCur)
     {
@@ -92,34 +96,63 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
       ind++;
       ni++;
     }
+    // update the 'bottom' edge of the accumulated weight
     wCur+=std::abs(wConf[iw]);
     if(ni)
     {
-      icdiff++;
+      icdiff++; // accumulate the total number of walkers that are kept and/or copied
     }
-    ipip[iw]=ni;
+    ipip[iw]=ni; //store the number of copies of the current walker upon reconfiguration
   }
   //ofstream fout("check.dat", std::ios::app);
   //fout << wtot << " " << icdiff << std::endl;
-  std::vector<int> plus,minus;
+  
+  // count up the actual number of copies/overwrites
+  std::vector<int> plus,minus; 
   for(int iw=0; iw<nw; iw++)
   {
     int m=ipip[iw];
-    if(m>1)
-      plus.insert(plus.end(),m-1,iw);
+    if(m>1) // this walker will be copied
+      plus.insert(plus.end(),m-1,iw); // write m-1 because we already have 1 copy
     else
-      if(m==0)
+      if(m==0) // this walker will be overwritten
         minus.push_back(iw);
   }
-  curData[FNSIZE_INDEX]=nw-minus.size();
-  curData[RNONESIZE_INDEX]=minus.size();
+  curData[FNSIZE_INDEX]=nw-minus.size(); // keep track of the number walkers not being overwritten
+  curData[RNONESIZE_INDEX]=minus.size(); // and the number being overwritten
+  // for each copy
   for(int i=0; i<plus.size(); i++)
   {
-    int im=minus[i],ip=plus[i];
-    W[im]->makeCopy(*(W[ip]));
+    int im=minus[i],ip=plus[i]; // get the index of the walker to be overwritten and the walker to be copied
+    W[im]->makeCopy(*(W[ip])); // overwrite...
     W[im]->ParentID=W[ip]->ID;
     W[im]->ID=(++NumWalkersCreated)*NumContexts+MyContext;
   }
+
+  // now that we have reconfigured, we can accumulate statistics with the new weights   
+  RealType esum=0.0, e2sum=0.0, ecum=0.0;
+  RealType r2_accepted=0.0, r2_proposed=0.0;
+  it = W.begin(); // re-initialize walker iterator
+  // loop over all walkers in the reconfigured population
+  for(int iw=0; iw<nw; iw++)
+  {
+    r2_accepted+=(*it)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it)->Properties(R2PROPOSED);
+    (*it)->Weight=curData[WEIGHT_INDEX]/curData[WALKERSIZE_INDEX]; // the new weights are uniform
+    (*it)->Multiplicity=1.0; // and every walker has multiplicity 1 even if we've copied it (the whole point is to avoid changing the population size)
+    RealType wgt((*it)->Weight);
+    RealType e((*it)->Properties(LOCALENERGY));
+    esum += wgt*e;
+    e2sum += wgt*e*e;
+    ecum += e;
+    ++it;
+  }
+  // store everything we've just accumulated
+  curData[ENERGY_INDEX]=esum;
+  curData[ENERGY_SQ_INDEX]=e2sum;        
+  curData[EREF_INDEX]=ecum;
+  curData[R2ACCEPTED_INDEX]=r2_accepted;
+  curData[R2PROPOSED_INDEX]=r2_proposed;
   //int killed = shuffleIndex(nw);
   //fout << "# Total weight " << wtot << " " << killed <<  std::endl;
   //cout << "<<<< CopyIndex " << std::endl;
@@ -130,7 +163,7 @@ int WalkerReconfiguration::getIndexPermutation(MCWalkerConfiguration& W)
   //    W[iw]->assign(*(W[IndexCopy[iw]]));
   //  }
   //}
-  return icdiff;
+  return icdiff; // return the total number of walkers that are kept/copied
 }
 
 int WalkerReconfiguration::shuffleIndex(int nw)
@@ -177,13 +210,13 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   //set Weight and Multiplicity to default values
-  MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-  while(it != it_end)
-  {
-    (*it)->Weight= 1.0;
-    (*it)->Multiplicity=1.0;
-    ++it;
-  }
+  //x MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+  //x while(it != it_end)
+  //x {
+  //x  (*it)->Weight= 1.0;
+  //x  (*it)->Multiplicity=1.0;
+  //x  ++it;
+  //x }
   //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;
 }
