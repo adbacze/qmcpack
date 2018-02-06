@@ -44,6 +44,13 @@ WalkerReconfigurationMPI::branch(int iter, MCWalkerConfiguration& W, RealType tr
   ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   //set Weight and Multiplicity to default values
+//  MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
+//  while(it != it_end)
+//  {
+//    (*it)->Weight= 1.0;
+//    (*it)->Multiplicity=1.0;
+//    ++it;
+//  }
   return nwkept;
 }
 
@@ -52,74 +59,61 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //ostringstream o;
   //o << "check." << MyContext << ".dat";
   //ofstream fout(o.str().c_str(),std::ios::app);
-  //
-  int nw=W.getActiveWalkers(); // get the number of walkers in this context
-  if(TotalWalkers !=nw*NumContexts) // each context should have the same number of walkers
+  int nw=W.getActiveWalkers();
+  if(TotalWalkers !=nw*NumContexts)
   {
-    FirstWalker=nw*MyContext; // get the global index of the first walker
-    LastWalker=FirstWalker+nw; // get the global index of the last walker (rather that index+1, for delimiting a loop)
+    FirstWalker=nw*MyContext;
+    LastWalker=FirstWalker+nw;
     TotalWalkers = nw*NumContexts;
-    nwInv = 1.0/static_cast<RealType>(TotalWalkers); // this will go into the reconfigured weights (each walker will 'weight' total weight/total population)
-    ncopy_w.resize(nw); // for storing the number of copies of each local walker upon reconfiguration
-    wConf.resize(nw); // for storing the weights of the local walkers
+    nwInv = 1.0/static_cast<RealType>(TotalWalkers);
+    ncopy_w.resize(nw);
+    wConf.resize(nw);
     //wSum.resize(NumContexts);
-    wOffset.resize(NumContexts+1); // for storing partial sums of the accumulated weight on each context
-    dN.resize(NumContexts+4); // for storing the total change in population on each context (i.e., subtracting local copy/overwrite pairs)
+    wOffset.resize(NumContexts+1);
+    dN.resize(NumContexts+4);
   }
-
-  UnitZeta=Random(); // the random offset for spacing the 'teeth' of the comb
-  myComm->bcast(UnitZeta); // all contexts need the same random offset to have consistent 'teeth'
+  UnitZeta=Random();
+  myComm->bcast(UnitZeta);
   DeltaStep=UnitZeta*nwInv;
-
   //std::fill(wSum.begin(),wSum.end(),0.0);
-  
-  // sum up the total weight of the local population of walkers
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
-  int iw=0; 
-  RealType wtot=0.0;
-  //x RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
-  //x RealType r2_accepted=0.0,r2_proposed=0.0;
+  int iw=0;
+  RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
+  RealType r2_accepted=0.0,r2_proposed=0.0;
   while(it != it_end)
   {
-    //x r2_accepted+=(*it)->Properties(R2ACCEPTED);
-    //x r2_proposed+=(*it)->Properties(R2PROPOSED);
+    r2_accepted+=(*it)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it)->Properties(R2PROPOSED);
     RealType wgt((*it)->Weight);
-    wtot += wConf[iw++]=wgt;
-    //x RealType e((*it)->Properties(LOCALENERGY));
-    //x esum += wgt*e;
-    //x e2sum += wgt*e*e;
-    //x wtot += wgt;
-    //x ecum += e;
+    RealType e((*it)->Properties(LOCALENERGY));
+    esum += wgt*e;
+    e2sum += wgt*e*e;
+    wtot += wgt;
+    ecum += e;
+    wConf[iw++]=wgt;
     ++it;
   }
-
-  //x //wSum[MyContext]=wtot;
-  //x curData[ENERGY_INDEX]=esum;
-  //x curData[ENERGY_SQ_INDEX]=e2sum;
-  //x curData[WALKERSIZE_INDEX]=nw;
+  //wSum[MyContext]=wtot;
+  curData[ENERGY_INDEX]=esum;
+  curData[ENERGY_SQ_INDEX]=e2sum;
+  curData[WALKERSIZE_INDEX]=nw;
   curData[WEIGHT_INDEX]=wtot;
-  //x curData[EREF_INDEX]=ecum;
-  //x curData[R2ACCEPTED_INDEX]=r2_accepted;
-  //x curData[R2PROPOSED_INDEX]=r2_proposed;
+  curData[EREF_INDEX]=ecum;
+  curData[R2ACCEPTED_INDEX]=r2_accepted;
+  curData[R2PROPOSED_INDEX]=r2_proposed;
   std::fill(curData.begin()+LE_MAX,curData.end(),0.0);
   curData[LE_MAX+MyContext]=wtot;
-  
-  //sum up across contexts 
-  myComm->allreduce(curData); // note: this implicitly reduces some quantities that we can't reduce yet (but this is a drop in the ocean)
-  
+  //collect everything
+  myComm->allreduce(curData);
   //update EnsembleProperty
   W.EnsembleProperty.NumSamples=curData[WALKERSIZE_INDEX];
   W.EnsembleProperty.Weight=curData[WEIGHT_INDEX];
-  
   //wOffset[ip] is the partial sum update to ip
   wOffset[0]=0;
   //for(int ip=0; ip<NumContexts; ip++) wOffset[ip+1]=wOffset[ip]+wSum[ip];
-  
-  // loop over contexts, get the accumulated weight at the boundary of each context
   for(int ip=0,jp=LE_MAX; ip<NumContexts; ip++,jp++)
     wOffset[ip+1]=wOffset[ip]+curData[jp];
-  wtot=wOffset[NumContexts]; // wtot was the total weight of the local population, now it is the total weight of the entire population
-
+  wtot=wOffset[NumContexts]; //wtot is the total weight
   //find the lower and upper bound of index
   int minIndex=static_cast<int>((wOffset[MyContext]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))-1;
   int maxIndex=static_cast<int>((wOffset[MyContext+1]/wtot-DeltaStep)*static_cast<RealType>(TotalWalkers))+1;
@@ -127,7 +121,7 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   std::vector<RealType> Zeta(nb);
   for(int i=minIndex, ii=0; i<maxIndex; i++,ii++)
   {
-    Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv); // place the 'teeth' of the comb
+    Zeta[ii]= wtot*(DeltaStep+static_cast<RealType>(i)*nwInv);
   }
   RealType wCur=wOffset[MyContext];
   int ind=0;
@@ -214,25 +208,23 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   //app_log() << std::endl;
   //record the number of walkers created/destroyed
 
-  // loop over all local walkers in the reconfigured population, accumulate statistics with the new weights
-  it=W.begin();
-  it_end=W.end();
+  //kludge!
+  MCWalkerConfiguration::iterator it2(W.begin()), it_end2(W.end());
   iw=0;
-  wtot=0.0;
-  RealType esum=0.0,e2sum=0.0,ecum=0.0;
-  RealType r2_accepted=0.0,r2_proposed=0.0;
-  while(it != it_end)
+  esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
+  r2_accepted=0.0,r2_proposed=0.0;
+  while(it2 != it_end2)
   {
-    r2_accepted+=(*it)->Properties(R2ACCEPTED);
-    r2_proposed+=(*it)->Properties(R2PROPOSED);
-    (*it)->Weight=curData[WEIGHT_INDEX]/curData[WALKERSIZE_INDEX];
-    RealType wgt((*it)->Weight);
-    RealType e((*it)->Properties(LOCALENERGY));
+    r2_accepted+=(*it2)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it2)->Properties(R2PROPOSED);
+    (*it2)->Weight=curData[WEIGHT_INDEX]/curData[WALKERSIZE_INDEX];
+    RealType wgt((*it2)->Weight);
+    RealType e((*it2)->Properties(LOCALENERGY));
     esum += wgt*e;
     e2sum += wgt*e*e;
     wtot += wgt;
     ecum += e;
-    ++it;
+    ++it2;
   }
   curData[ENERGY_INDEX]=esum;
   curData[ENERGY_SQ_INDEX]=e2sum;

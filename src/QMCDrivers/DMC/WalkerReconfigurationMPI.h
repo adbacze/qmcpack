@@ -47,8 +47,6 @@ struct WalkerReconfigurationMPI: public WalkerControlBase
   std::vector<RealType> wConf;
   //accumulated weight [0,ip) for each ip
   std::vector<RealType> wOffset;
-  //local sum of the weights for each ip
-  std::vector<RealType> wSum;
   //comb
   //vector<RealType> Zeta;
 
