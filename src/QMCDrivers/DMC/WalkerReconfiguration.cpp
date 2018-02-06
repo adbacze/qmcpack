@@ -210,13 +210,6 @@ WalkerReconfiguration::branch(int iter, MCWalkerConfiguration& W, RealType trigg
   ////accumData[WALKERSIZE_INDEX] += curData[WALKERSIZE_INDEX];
   //accumData[WEIGHT_INDEX]     += curData[WEIGHT_INDEX];
   //set Weight and Multiplicity to default values
-  //x MCWalkerConfiguration::iterator it(W.begin()),it_end(W.end());
-  //x while(it != it_end)
-  //x {
-  //x  (*it)->Weight= 1.0;
-  //x  (*it)->Multiplicity=1.0;
-  //x  ++it;
-  //x }
   //curData[WALKERSIZE_INDEX]=nwkept;
   return nwkept;
 }
