@@ -18,6 +18,8 @@
 #include "OhmmsData/ParameterSet.h"
 #include "QMCDrivers/DMC/WalkerControlFactory.h"
 #include "QMCDrivers/DMC/WalkerReconfiguration.h"
+#include "QMCDrivers/DMC/PureDMC.h"
+#include "QMCDrivers/DMC/MinimalReconfiguration.h"
 #if defined(HAVE_MPI)
 #include "QMCDrivers/DMC/WalkerControlMPI.h"
 #include "QMCDrivers/DMC/WalkerReconfigurationMPI.h"
@@ -43,7 +45,7 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   //if(nmin<0) nmin=nideal/2;
   WalkerControlBase* wc=0;
   int ncontexts = comm->size();
-  bool fixw= (reconfig || reconfigopt == "yes"|| reconfigopt == "pure");
+  bool fixw= (reconfig || reconfigopt == "yes"|| reconfigopt == "pure" || reconfigopt == "min");
   if(fixw)
   {
     int nwloc=std::max(omp_get_max_threads(),nwtot/ncontexts);
@@ -66,11 +68,21 @@ WalkerControlBase* createWalkerController(int nwtot, Communicate* comm, xmlNodeP
   else
 #endif
   {
-    if(fixw)
+    if(reconfigopt=="yes")
     {
       app_log() << "  Using WalkerReconfiguration for population control." << std::endl;
       wc = new WalkerReconfiguration(comm);
     }
+    else if(reconfigopt=="pure")
+    {
+      app_log() << "  Using PureDMC for population control." << std::endl;
+      wc = new PureDMC(comm);	   	   
+    }
+    else if(reconfigopt=="min")
+    {
+      app_log() << "  Using MinimalReconfiguration for population control." << std::endl;	    
+      wc = new MinimalReconfiguration(comm); 	    
+    }	    	    
     else
     {
       app_log() << "  Using WalkerControlBase for dynamic population control." << std::endl;
