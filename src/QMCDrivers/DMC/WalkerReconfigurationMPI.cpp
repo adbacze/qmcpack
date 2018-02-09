@@ -76,31 +76,29 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   // sum up the total weight of the local population of walkers
   MCWalkerConfiguration::iterator it(W.begin()), it_end(W.end());
   int iw=0; 
-  RealType wtot=0.0;
-  //x RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
-  //x RealType r2_accepted=0.0,r2_proposed=0.0;
+  RealType esum=0.0,e2sum=0.0,wtot=0.0,ecum=0.0;
+  RealType r2_accepted=0.0,r2_proposed=0.0;
   while(it != it_end)
   {
-    //x r2_accepted+=(*it)->Properties(R2ACCEPTED);
-    //x r2_proposed+=(*it)->Properties(R2PROPOSED);
+    r2_accepted+=(*it)->Properties(R2ACCEPTED);
+    r2_proposed+=(*it)->Properties(R2PROPOSED);
     RealType wgt((*it)->Weight);
     wtot += wConf[iw++]=wgt;
-    //x RealType e((*it)->Properties(LOCALENERGY));
-    //x esum += wgt*e;
-    //x e2sum += wgt*e*e;
-    //x wtot += wgt;
-    //x ecum += e;
+    RealType e((*it)->Properties(LOCALENERGY));
+    esum += wgt*e;
+    e2sum += wgt*e*e;
+    ecum += e;
     ++it;
   }
 
   //x //wSum[MyContext]=wtot;
-  //x curData[ENERGY_INDEX]=esum;
-  //x curData[ENERGY_SQ_INDEX]=e2sum;
-  //x curData[WALKERSIZE_INDEX]=nw;
+  curData[ENERGY_INDEX]=esum;
+  curData[ENERGY_SQ_INDEX]=e2sum;
+  curData[WALKERSIZE_INDEX]=nw;
   curData[WEIGHT_INDEX]=wtot;
-  //x curData[EREF_INDEX]=ecum;
-  //x curData[R2ACCEPTED_INDEX]=r2_accepted;
-  //x curData[R2PROPOSED_INDEX]=r2_proposed;
+  curData[EREF_INDEX]=ecum;
+  curData[R2ACCEPTED_INDEX]=r2_accepted;
+  curData[R2PROPOSED_INDEX]=r2_proposed;
   std::fill(curData.begin()+LE_MAX,curData.end(),0.0);
   curData[LE_MAX+MyContext]=wtot;
   
@@ -219,8 +217,11 @@ int WalkerReconfigurationMPI::swapWalkers(MCWalkerConfiguration& W)
   it_end=W.end();
   iw=0;
   wtot=0.0;
-  RealType esum=0.0,e2sum=0.0,ecum=0.0;
-  RealType r2_accepted=0.0,r2_proposed=0.0;
+  esum=0.0;
+  e2sum=0.0;
+  ecum=0.0;
+  r2_accepted=0.0;
+  r2_proposed=0.0;
   while(it != it_end)
   {
     r2_accepted+=(*it)->Properties(R2ACCEPTED);
