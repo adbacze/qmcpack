@@ -44,6 +44,7 @@ SET(QMCDRIVERS
   DMC/DMCFactory.cpp
   DMC/WalkerControlFactory.cpp
   DMC/WalkerReconfiguration.cpp
+  DMC/MinimalReconfiguration.cpp
   RMC/RMCSingleOMP.cpp
   RMC/RMCUpdatePbyP.cpp
   RMC/RMCUpdateAll.cpp
